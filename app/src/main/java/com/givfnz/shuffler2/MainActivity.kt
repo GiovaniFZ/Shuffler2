@@ -17,7 +17,28 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.givfnz.shuffler2.ui.theme.Shuffler2Theme
+import kotlinx.coroutines.launch
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.http.GET
+import retrofit2.http.Query
 
+data class NumbersResult(val result: List<Int>)
+interface ApiService {
+    @GET("random")
+    suspend fun getNumbers(
+        @Query("min") min: String,
+        @Query("max") max: String,
+        @Query("count") count: String,
+        @Query("no_repeat") noRepeat: Boolean
+    ): NumbersResult
+}
+
+val apiService: ApiService = Retrofit.Builder()
+    .baseUrl("https://givs-shuffler-api.vercel.app/")
+    .addConverterFactory(GsonConverterFactory.create())
+    .build()
+    .create(ApiService::class.java)
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,6 +59,8 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun ShowShufflerMain() {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+    var apiResponse by remember { mutableStateOf("Press Draw to fetch data") }
     
     var number1 by remember { mutableStateOf("") }
     var number2 by remember { mutableStateOf("") }
@@ -109,16 +132,38 @@ fun ShowShufflerMain() {
             }
 
             Row {
-                Button(onClick = { /* TODO: API Integration */ }) {
+                Button(onClick = {
+                    scope.launch {
+                        try {
+                            val result = apiService.getNumbers(
+                                min = number1,
+                                max = number2,
+                                count = amount,
+                                noRepeat = noRepeat
+                            )
+                            apiResponse = "Result: ${result.result}"
+                        } catch (e: Exception) {
+                            apiResponse = "Error: ${e.message}"
+                        }
+                    }
+                }) {
                     Text("Draw!")
                 }
                 Spacer(Modifier.width(8.dp))
                 Button(onClick = {
-                    number1 = ""; number2 = ""; amount = ""; noRepeat = false
+                    number1 = ""; number2 = ""; amount = ""; noRepeat = false; apiResponse = "Press Draw to fetch data"
                 }) {
                     Text("Reset!")
                 }
             }
+
+            Spacer(Modifier.height(16.dp))
+            Text(
+                text = apiResponse,
+                modifier = Modifier.padding(16.dp),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium
+            )
         }
     }
 }
