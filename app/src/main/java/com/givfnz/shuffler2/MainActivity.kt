@@ -1,5 +1,6 @@
 package com.givfnz.shuffler2
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -12,6 +13,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -58,6 +60,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun ShowShufflerMain() {
+    val context = LocalContext.current
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     var apiResponse by remember { mutableStateOf("Press Draw to fetch data") }
@@ -76,7 +79,10 @@ fun ShowShufflerMain() {
                 NavigationDrawerItem(
                     label = { Text(text = "Words chooser") },
                     selected = false,
-                    onClick = { /* TODO: Go to words chooser */ }
+                    onClick = {
+                        val intent = Intent(context, WordsActivity::class.java)
+                        context.startActivity(intent)
+                    }
                 )
                 NavigationDrawerItem(
                     label = { Text(text = "Numbers chooser") },
